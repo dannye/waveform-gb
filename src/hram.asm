@@ -2,3 +2,4 @@
 
 	enum hROMBank
 	enum hGBC
+	enum hDMA

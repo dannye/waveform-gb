@@ -1,7 +1,7 @@
 .POSIX:
 .SUFFIXES: .asm
 
-name = bootstrap
+name = waveform
 src  = src
 obj  = src/main.o src/core.o
 
@@ -18,4 +18,4 @@ gfx:
 
 $(name).gb: gfx $(obj)
 	@rgblink -n $(name).sym -o $@ $(obj)
-	@rgbfix -jv -i XXXX -k XX -l 0x33 -m 0x01 -p 0 -r 0 -t BOOTSTRAP $@
+	@rgbfix -jv -i XXXX -k XX -l 0x33 -m 0x01 -p 0 -r 0 -t WAVEFORM $@

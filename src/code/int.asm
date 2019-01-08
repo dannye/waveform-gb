@@ -24,8 +24,9 @@ VBlank:
 	push bc
 	push de
 	push hl
+	call hDMA
 
-	call LoadGfxQueue
+	call CheckGfxQueue
 	call nc, RunCallbacks
 
 	call RunTasks

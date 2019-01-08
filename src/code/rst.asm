@@ -25,8 +25,8 @@ section "farcall", rom0
 
 FarCall_:
 	ld  [wFarCallHold + 0], a
-	put [wFarCallHold + 1], h
-	put [wFarCallHold + 2], l
+	put [wFarCallHold + 1], l
+	put [wFarCallHold + 2], h
 
 	pop hl
 	put [wFarCallBank],        [hli]
@@ -57,6 +57,7 @@ FarCall_:
 	rst Bankswitch
 
 	pop af
+	add sp, 2
 	ret
 
 

@@ -89,13 +89,13 @@ QueueGfx::
 	ret
 
 
-LoadGfxQueue:
+CheckGfxQueue:
 	ld hl, wGfxQueue
 	ld a, [hli]
 	and a
 	ret z
 
-	call LoadGfx
+	call LoadGfxFromQueue
 
 	ld a, [wGfxQueue]
 	dec a
@@ -107,7 +107,7 @@ LoadGfxQueue:
 	ret
 
 
-LoadGfx:
+LoadGfxFromQueue:
 	ld c, [hl]
 	inc hl
 	ld b, [hl]
@@ -121,6 +121,9 @@ LoadGfx:
 ;	and a
 ;	ret z
 
+; only call this directly if LCD is disabled
+; otherwise use graphics queue
+LoadGfx::
 	push hl
 	ld l, e
 	ld h, d

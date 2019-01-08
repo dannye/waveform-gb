@@ -61,8 +61,7 @@ Init:
 	pop af
 	ld [hGBC], a
 
-; Filling vram is not really necessary.
-;	fill $8000, $2000, 0
+	fill $8000, $2000, 0
 
 	fill $fe00, $a0, 0
 
@@ -87,6 +86,7 @@ endc
 
 	halt
 
+	call WriteDMATransferToHRAM
 	call Main
 
 	; if Main returns, restart the program
