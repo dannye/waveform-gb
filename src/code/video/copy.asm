@@ -1,4 +1,4 @@
-section "video copy", rom0
+SECTION "Video Copy", ROM0
 
 DrawTilemapRect::
 ; Fill a cxb rectangle at bg map address hl with a++.

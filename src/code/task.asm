@@ -1,4 +1,4 @@
-NUM_TASKS EQU 8
+NUM_TASKS   EQU 8
 TASK_LENGTH EQU 1 + 3 + 6
 
 RSRESET
@@ -7,13 +7,13 @@ TASK_FUNC RB 3
 TASK_DATA RB 6
 
 
-section "task wram", wram0
+SECTION "Task WRAM", WRAM0
 
 wTasks:
 	ds TASK_LENGTH * NUM_TASKS
 
 
-section "task", rom0
+SECTION "Task", ROM0
 
 CreateTask::
 ; Create a new task and set its function to a:de.

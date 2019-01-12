@@ -1,13 +1,13 @@
-OAM_SPRITES = 40
+OAM_SPRITES EQU 40
 
 
-section "OAM", wram0[$c300]
+SECTION "OAM WRAM", WRAM0, ALIGN[8]
 
 wOAM::
 	ds 4 * OAM_SPRITES
 
 
-section "OAM DMA Transfer", rom0
+SECTION "OAM", ROM0
 
 ; copy DMA routine to HRAM
 WriteDMATransferToHRAM:
@@ -16,7 +16,7 @@ WriteDMATransferToHRAM:
 	ld hl, DMATransfer
 .copyLoop
 	ld a, [hli]
-	ld [$ff00+c], a
+	ld [$FF00+c], a
 	inc c
 	dec b
 	jr nz, .copyLoop

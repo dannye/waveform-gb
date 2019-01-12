@@ -1,3 +1,5 @@
+SECTION "LCD", ROM0
+
 DisableLCD::
 	xor a
 	ld [rIF], a

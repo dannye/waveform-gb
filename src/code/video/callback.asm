@@ -1,15 +1,15 @@
-NUM_CALLBACKS EQU 5
+NUM_CALLBACKS   EQU 5
 CALLBACK_LENGTH EQU 3
 
 
-section "callback wram", wram0
+SECTION "Callback WRAM", WRAM0
 
 wCallbacks:
 	ds 1
 	ds CALLBACK_LENGTH * NUM_CALLBACKS
 
 
-section "callback", rom0
+SECTION "Callback", ROM0
 
 Callback::
 ; Call a:hl during the next vblank.

@@ -1,10 +1,10 @@
-section "stack", wram0 [$c080]
+SECTION "Stack", WRAM0[$C080]
 
 	ds $80 - 1
 wStack::
 
 
-section "init", rom0
+SECTION "Init", ROM0
 
 Init:
 	di
@@ -38,7 +38,7 @@ Init:
 
 	ld sp, wStack
 
-	fill $c000, $2000, 0
+	fill $C000, $2000, 0
 
 	ld a, [hGBC]
 	and a
@@ -48,7 +48,7 @@ Init:
 .wram_bank
 	push af
 	ld [rSVBK], a
-	fill $d000, $1000, 0
+	fill $D000, $1000, 0
 	pop af
 	dec a
 	cp 1
@@ -57,13 +57,13 @@ Init:
 
 	ld a, [hGBC]
 	push af
-	fill $ff80, $7f, 0
+	fill $FF80, $7F, 0
 	pop af
 	ld [hGBC], a
 
 	fill $8000, $2000, 0
 
-	fill $fe00, $a0, 0
+	fill $FE00, $A0, 0
 
 
 	put [rJOYP], 0
@@ -73,11 +73,11 @@ Init:
 
 	put [rLCDC], %11100011
 
-if def(NormalSpeed) ; not implemented yet
+IF def(NormalSpeed) ; not implemented yet
 	ld a, [hGBC]
 	and a
 	call nz, NormalSpeed
-endc
+ENDC
 
 	put [rIF], 0
 	put [rIE], %1111

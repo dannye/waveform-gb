@@ -1,49 +1,52 @@
-include "constants.asm"
+INCLUDE "constants.asm"
 
-KNOB_BASE_TILE = 0
-KNOB_TRACK_TILE = 1
-KNOB_LEFT_TILE = 2
-KNOB_RIGHT_TILE = 3
-KNOB_BOTH_TILE = 4
-KNOB_START_X = 2
-KNOB_START_Y = 1
-NUM_COLUMNS = 16
-NUM_ROWS = 16
-KNOB_HEIGHT = 1
-KNOB_WIDTH = 5
+KNOB_BASE_TILE  EQU 0
+KNOB_TRACK_TILE EQU 1
+KNOB_LEFT_TILE  EQU 2
+KNOB_RIGHT_TILE EQU 3
+KNOB_BOTH_TILE  EQU 4
+KNOB_START_X    EQU 2
+KNOB_START_Y    EQU 1
+NUM_COLUMNS     EQU 16
+NUM_ROWS        EQU 16
+KNOB_HEIGHT     EQU 1
+KNOB_WIDTH      EQU 5
 
-NUMBER_X = KNOB_START_X + -1
-NUMBER_Y = KNOB_START_Y
+NUMBER_X EQU KNOB_START_X + -1
+NUMBER_Y EQU KNOB_START_Y
 
-FONT_BASE_TILE = $20
-FONT_HEIGHT = 6
-FONT_WIDTH = 16
+FONT_BASE_TILE EQU $20
+FONT_HEIGHT    EQU 6
+FONT_WIDTH     EQU 16
 
-HEX_BASE_TILE = $10
-HEX_X = KNOB_START_X
-HEX_Y = KNOB_START_Y + NUM_ROWS
-HEX_HEIGHT = 1
-HEX_WIDTH = 16
+HEX_BASE_TILE EQU $10
+HEX_X         EQU KNOB_START_X
+HEX_Y         EQU KNOB_START_Y + NUM_ROWS
+HEX_HEIGHT    EQU 1
+HEX_WIDTH     EQU 16
 
-ARROW_TILE = 0
-ARROW_X = 8 * KNOB_START_X + 6
-ARROW_Y = 8 * (KNOB_START_Y + 1)
+ARROW_TILE EQU 0
+ARROW_X    EQU 8 * KNOB_START_X + 6
+ARROW_Y    EQU 8 * (KNOB_START_Y + 1)
 
 
-section "Main wram", wram0
+SECTION "Main WRAM", WRAM0
 
 wWave:: ds NUM_COLUMNS
 wCursorPos: ds 1
 wKnobColumn: ds NUM_ROWS
-wHexTiles: ds $10 * HEX_WIDTH
-wNewHexTile: ds $10
+wHexTiles: ds BYTES_PER_TILE * HEX_WIDTH
+wNewHexTile: ds BYTES_PER_TILE
 
 
-section "Main", rom0
+SECTION "Main", ROM0
 
 Main::
 	call InitSound
+	call Load
+	call UpdateWave
 	call Setup
+	call PlayNote
 .loop
 	call WaitVBlank
 	call Update
@@ -63,8 +66,8 @@ Update:
 	ld hl, wWave
 	add hl, de
 	ld a, [wJoyPressed]
-	bit D_UP_F, a
-	jr z, .noUp
+	cp D_UP
+	jr nz, .noUp
 	ld a, [hl]
 	bit 0, c
 	jr nz, .skipOdd1
@@ -94,11 +97,13 @@ Update:
 	call UpdateHexTile
 	callback CopyHexTile
 	call UpdateWave
+	call PlayNote
+	call Save
 .isMax
 .noUp
 	ld a, [wJoyPressed]
-	bit D_DOWN_F, a
-	jr z, .noDown
+	cp D_DOWN
+	jr nz, .noDown
 	ld a, [hl]
 	bit 0, c
 	jr nz, .skipOdd4
@@ -128,11 +133,13 @@ Update:
 	call UpdateHexTile
 	callback CopyHexTile
 	call UpdateWave
+	call PlayNote
+	call Save
 .isMin
 .noDown
 	ld a, [wJoyPressed]
-	bit D_LEFT_F, a
-	jr z, .noLeft
+	cp D_LEFT
+	jr nz, .noLeft
 	ld a, [wCursorPos]
 	dec a
 	cp -1
@@ -148,8 +155,8 @@ Update:
 	put [wOAM + 1], l
 .noLeft
 	ld a, [wJoyPressed]
-	bit D_RIGHT_F, a
-	jr z, .noRight
+	cp D_RIGHT
+	jr nz, .noRight
 	ld a, [wCursorPos]
 	inc a
 	cp NUM_COLUMNS * 2
@@ -177,14 +184,13 @@ UpdateWave:
 	dec c
 	jr nz, .copyLoop
 	put [rNR30], %10000000 ; ch3 on
-	call PlayNote
 	ret
 
 Setup:
 	call DisableLCD
 
 	ld bc, KnobGraphics
-	ld de, vChars2 + KNOB_BASE_TILE * $10
+	ld de, vChars2 + KNOB_BASE_TILE * BYTES_PER_TILE
 	ld a, KNOB_WIDTH * KNOB_HEIGHT
 	call LoadGfx
 
@@ -194,17 +200,17 @@ Setup:
 	call LoadGfx
 
 	ld bc, FontGraphics
-	ld de, vChars2 + FONT_BASE_TILE * $10
+	ld de, vChars2 + FONT_BASE_TILE * BYTES_PER_TILE
 	ld a, FONT_WIDTH * FONT_HEIGHT
 	call LoadGfx
 
 	ld bc, ArrowGraphics
-	ld de, vChars0 + ARROW_TILE * $10
+	ld de, vChars0 + ARROW_TILE * BYTES_PER_TILE
 	ld a, 1
 	call LoadGfx
 
 	put [wCursorPos], 0
-	rept NUM_COLUMNS
+	REPT NUM_COLUMNS
 	call UpdateKnobTilemap
 	call CopyKnobTilemap
 	call UpdateHexTile
@@ -213,16 +219,16 @@ Setup:
 	inc a
 	inc a
 	ld [wCursorPos], a
-	endr
+	ENDR
 	put [wCursorPos], 0
 	call DrawNumberTilemap
 
 	ld hl, vBGMap0 + BG_WIDTH * HEX_Y + HEX_X
 	ld a, HEX_BASE_TILE
-	rept NUM_COLUMNS
+	REPT NUM_COLUMNS
 	ld [hli], a
 	inc a
-	endr
+	ENDR
 
 	ld hl, wOAM
 	put [hli], ARROW_Y
@@ -238,9 +244,9 @@ Setup:
 UpdateKnobTilemap:
 	ld hl, wKnobColumn
 	ld a, KNOB_TRACK_TILE
-	rept NUM_ROWS
+	REPT NUM_ROWS
 	ld [hli], a
-	endr
+	ENDR
 	ld a, [wCursorPos]
 	srl a
 	ld b, 0
@@ -287,11 +293,11 @@ CopyKnobTilemap:
 	add hl, bc
 	ld de, wKnobColumn
 	ld bc, BG_WIDTH
-	rept NUM_ROWS
+	REPT NUM_ROWS
 	put [hl], [de]
 	add hl, bc
 	inc de
-	endr
+	ENDR
 	ret
 
 UpdateHexTile:
@@ -322,7 +328,7 @@ UpdateHexTile:
 	push hl
 	pop bc
 	ld hl, wNewHexTile
-	ld a, $10
+	ld a, BYTES_PER_TILE
 .hexLoop
 	push af
 	ld a, [bc]
@@ -346,13 +352,13 @@ CopyHexTile:
 	swap a
 	ld b, 0
 	ld c, a
-	ld hl, vChars2 + HEX_BASE_TILE * $10
+	ld hl, vChars2 + HEX_BASE_TILE * BYTES_PER_TILE
 	add hl, bc
 	ld de, wNewHexTile
-	rept $10
+	REPT BYTES_PER_TILE
 	put [hli], [de]
 	inc de
-	endr
+	ENDR
 	ret
 
 DrawNumberTilemap:

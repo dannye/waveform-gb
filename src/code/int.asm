@@ -1,23 +1,23 @@
 ; Hardware interrupts
 
-section "vblank int", rom0 [$40]
+SECTION "VBlank int", ROM0[$40]
 	jp VBlank
 
-section "hblank int", rom0 [$48]
+SECTION "HBlank int", ROM0[$48]
 	reti
 
-section "timer int",  rom0 [$50]
+SECTION "Timer int",  ROM0[$50]
 	reti
 
-section "serial int", rom0 [$58]
+SECTION "Serial int", ROM0[$58]
 	reti
 
-section "joypad int", rom0 [$60]
+SECTION "Joypad int", ROM0[$60]
 	reti
 
 
 
-section "vblank", rom0
+SECTION "VBlank", ROM0
 
 VBlank:
 	push af
@@ -40,7 +40,7 @@ VBlank:
 	reti
 
 
-section "vblank wait", rom0
+SECTION "VBlank Wait", ROM0
 
 WaitVBlank::
 	xor a
@@ -53,9 +53,9 @@ WaitVBlank::
 	ret
 
 
-section "vblank wram", wram0
+SECTION "VBlank WRAM", WRAM0
 
-wVBlank:: db
+wVBlank:: ds 1
 
 
 INCLUDE "code/video/queue.asm"
