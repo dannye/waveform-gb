@@ -1,34 +1,34 @@
-put: macro
+put: MACRO
 	ld a, \2
 	ld \1, a
-endm
+ENDM
 
-ldx: macro
-	rept _NARG
+ldx: MACRO
+	REPT _NARG
 	ld \1, a
-	shift
-	endr
-endm
+	SHIFT
+	ENDR
+ENDM
 
-farcall: macro
+farcall: MACRO
 	rst FarCall
 	db  bank(\1)
 	dw  \1
-endm
+ENDM
 
-callback: macro
+callback: MACRO
 	ld a, bank(\1)
 	ld hl, \1
 	call Callback
-endm
+ENDM
 
-task: macro
+task: MACRO
 	ld a, bank(\1)
 	ld de, \1
 	call CreateTask
-endm
+ENDM
 
-fill: macro
+fill: MACRO
 	ld hl, \1
 	ld bc, \2
 .loop\@
@@ -38,26 +38,26 @@ fill: macro
 	ld a, b
 	or c
 	jr nz, .loop\@
-endm
+ENDM
 
 
-RGB: macro
+RGB: MACRO
 	dw (\1) + (\2) << 5 + (\3) << 10
-endm
+ENDM
 
 
-enum_start: macro
-	if _NARG
+enum_start: MACRO
+	IF _NARG
 __enum__ = \1
-	else
+	ELSE
 __enum__ = 0
-	endc
-endm
+	ENDC
+ENDM
 
-enum: macro
-	rept _NARG
+enum: MACRO
+	REPT _NARG
 \1 = __enum__
 __enum__ = __enum__ + 1
-	shift
-	endr
-endm
+	SHIFT
+	ENDR
+ENDM

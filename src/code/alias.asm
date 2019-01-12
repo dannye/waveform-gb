@@ -1,13 +1,13 @@
-section "hl", rom0
+SECTION "hl", ROM0
 __hl__::
 	jp hl
 
-section "de", rom0
+SECTION "de", ROM0
 __de__::
 	push de
 	ret
 
-section "bc", rom0
+SECTION "bc", ROM0
 __bc__::
 	push bc
 	ret

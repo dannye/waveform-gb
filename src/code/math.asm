@@ -1,4 +1,4 @@
-section "math", rom0
+SECTION "Math", ROM0
 
 ; multiply d x e
 ; return result in hl

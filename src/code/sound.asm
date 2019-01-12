@@ -1,10 +1,10 @@
-section "sound wram", wram0
+SECTION "Sound WRAM", WRAM0
 
 wPitch: ds 1
 wOctave: ds 1
 
 
-section "sound", rom0
+SECTION "Sound", ROM0
 
 InitSound::
 	put [rNR52], %10000000 ; sound enabled
@@ -34,11 +34,10 @@ InitSound::
 
 	put [wPitch], 0
 	put [wOctave], 4
-	call PlayNote
 	ret
 
 DefaultWave:
-	db $01,$23,$45,$67,$89,$AB,$CD,$EF,$FE,$DC,$BA,$98,$76,$54,$32,$10
+	db $01, $23, $45, $67, $89, $AB, $CD, $EF, $FE, $DC, $BA, $98, $76, $54, $32, $10
 
 PlayNote::
 	put b, [wOctave]

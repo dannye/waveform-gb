@@ -1,10 +1,10 @@
 ; rst vector addresses are defined here.
-Bankswitch equ 0
-FarCall    equ 8
+Bankswitch EQU 0
+FarCall    EQU 8
 
-include "gbhw.asm"
-include "macros.asm"
+INCLUDE "gbhw.asm"
+INCLUDE "macros.asm"
 
-include "hram.asm"
+INCLUDE "hram.asm"
 
-include "constants/buttons.asm"
+INCLUDE "constants/buttons.asm"

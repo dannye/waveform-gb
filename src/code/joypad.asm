@@ -1,15 +1,15 @@
-BUTTONS = $10
-D_PAD   = $20
-DONE    = $30
+BUTTONS EQU $10
+D_PAD   EQU $20
+DONE    EQU $30
 
 
-section "joypad", rom0
+SECTION "Joypad", ROM0
 
 Joypad::
 	put [rJOYP], D_PAD
-	rept 2
+	REPT 2
 	ld a, [rJOYP]
-	endr
+	ENDR
 
 	cpl
 	and %1111
@@ -18,9 +18,9 @@ Joypad::
 	ld b, a
 
 	put [rJOYP], BUTTONS
-	rept 6
+	REPT 6
 	ld a, [rJOYP]
-	endr
+	ENDR
 
 	cpl
 	and %1111
@@ -50,9 +50,9 @@ Joypad::
 	ret
 
 
-section "joypad wram", wram0
+SECTION "Joypad WRAM", WRAM0
 
-wJoy::         db
-wJoyLast::     db
-wJoyPressed::  db
-wJoyReleased:: db
+wJoy::         ds 1
+wJoyLast::     ds 1
+wJoyPressed::  ds 1
+wJoyReleased:: ds 1

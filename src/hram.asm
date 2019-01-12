@@ -1,4 +1,4 @@
-	enum_start $ff80
+	enum_start $FF80
 
 	enum hROMBank
 	enum hGBC

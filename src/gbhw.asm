@@ -2,14 +2,16 @@
 
 
 ; VRAM
-vChars0 = $8000
-vChars1 = $8800
-vChars2 = $9000
-vBGMap0 = $9800
-vBGMap1 = $9c00
+vChars0 EQU $8000
+vChars1 EQU $8800
+vChars2 EQU $9000
+vBGMap0 EQU $9800
+vBGMap1 EQU $9c00
 
-BG_WIDTH  = 32
-BG_HEIGHT = 32
+BG_WIDTH  EQU 32
+BG_HEIGHT EQU 32
+
+BYTES_PER_TILE EQU $10
 
 
 ; interrupt flags
@@ -42,7 +44,7 @@ rTAC        EQU $ff07 ; Timer Control (R/W)
 rTAC_ON        EQU 2
 rTAC_4096Hz       EQU 0
 rTAC_262144Hz     EQU 1
-rTAC_65536Hz      EQU 2 
+rTAC_65536Hz      EQU 2
 rTAC_16384Hz      EQU 3
 rIF         EQU $ff0f ; Interrupt Flag (R/W)
 rNR10       EQU $ff10 ; Channel 1 Sweep register (R/W)
