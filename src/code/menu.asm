@@ -17,10 +17,11 @@ wMenuMap:       ds SCREEN_WIDTH * SCREEN_HEIGHT
 
 SECTION "Menu", ROM0
 
+; open menu with the options table at hl
 OpenMenu::
-	ld [wMenuWidth], a
 	put [wMenuOptions + 0], l
 	put [wMenuOptions + 1], h
+	call CalcMenuWidth
 	call LoadTextBoxTiles
 	call ClearMenuMap
 	call DrawTextBox
@@ -86,6 +87,48 @@ OpenMenu::
 	call ScrollWindowOut
 	call DisableWindow
 	pop af
+	ret
+
+; calculate the inner width of the menu
+; based on the longest label in the options at hl
+; fix in the range [2, 18]
+CalcMenuWidth:
+	ld e, 0
+.optionsLoop
+	put c, [hli]
+	put b, [hli]
+	or c
+	jr z, .done
+	call CalcStringLength
+	ld a, d
+	jle e, .notLonger
+	ld e, a
+.notLonger
+	inc hl
+	inc hl
+	jr .optionsLoop
+.done
+	ld a, e
+	inc a ; plus one for arrow
+	jge 2, .bigEnough
+	ld a, 2
+.bigEnough
+	jle 18, .smallEnough
+	ld a, 18
+.smallEnough
+	ld [wMenuWidth], a
+	ret
+
+; return the length of 0-terminated string at bc in d
+CalcStringLength:
+	ld d, 0
+.loop
+	ld a, [bc]
+	inc bc
+	jz .done
+	inc d
+	jr .loop
+.done
 	ret
 
 LoadTextBoxTiles:
@@ -223,6 +266,8 @@ LoadOptions:
 	inc de
 	or c
 	jr z, .done
+	ld a, [wMenuWidth]
+	dec a
 	call PutString
 	ld hl, wMenuMaxOption
 	inc [hl]
@@ -237,13 +282,20 @@ LoadOptions:
 	put [wMenuCursor], 0
 	ret
 
+; copy the 0-terminated string at bc to hl
+; copy no more than 'a' characters
 PutString:
+	push af
+	jz .done
 	ld a, [bc]
 	inc bc
 	jz .done
 	ld [hli], a
+	pop af
+	dec a
 	jr PutString
 .done
+	pop af
 	ret
 
 PlaceMenuCursor:

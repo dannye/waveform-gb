@@ -171,7 +171,6 @@ Update:
 	put [wOAM + 1], 0
 .noHide
 	put [wOAM + 2], 2
-	ld a, 7
 	ld hl, StartMenuOptions
 	call OpenMenu
 	ld a, [wCursorPos]
