@@ -18,7 +18,11 @@ wMenuMap:       ds SCREEN_WIDTH * SCREEN_HEIGHT
 SECTION "Menu", ROM0
 
 ; open menu with the options table at hl
+; and default menu cursor position in a
+; display inactive cursor at initial position if c flag is set
 OpenMenu::
+	push af
+	ld [wMenuCursor], a
 	put [wMenuOptions + 0], l
 	put [wMenuOptions + 1], h
 	call CalcMenuWidth
@@ -32,6 +36,8 @@ OpenMenu::
 	call EnableWindow
 	call ScrollWindowIn
 	call PlaceMenuCursor
+	pop af
+	call c, PlaceInitialMenuCursor
 .menuLoop
 	call Joypad
 	ld a, [wJoyPressed]
@@ -61,6 +67,7 @@ OpenMenu::
 	jr .menuLoop
 
 .pressedA
+	call .closeMenu
 	; do the thing
 	put l, [wMenuOptions + 0]
 	put h, [wMenuOptions + 1]
@@ -74,19 +81,20 @@ OpenMenu::
 	ld a, [hli]
 	ld h, [hl]
 	ld l, a
+	ld a, [wMenuCursor]
 	call __hl__
 	ld a, [wMenuCursor]
-	jr .closeMenu
+	ret
 
 .pressedB
+	call .closeMenu
 	ld a, -1
+	ret
 
 .closeMenu
-	push af
-	call RemoveMenuCursor
+	call RemoveMenuCursors
 	call ScrollWindowOut
 	call DisableWindow
-	pop af
 	ret
 
 ; calculate the inner width of the menu
@@ -279,7 +287,6 @@ LoadOptions:
 	jr .optionsLoop
 .done
 	pop hl
-	put [wMenuCursor], 0
 	ret
 
 ; copy the 0-terminated string at bc to hl
@@ -317,9 +324,32 @@ PlaceMenuCursor:
 	put [wOAM + 7], 0
 	ret
 
-RemoveMenuCursor:
+PlaceInitialMenuCursor:
+	put d, [wMenuCursor]
+	ld e, TILE_WIDTH * 2
+	call Multiply
+	ld a, TILE_WIDTH * 3
+	add l
+	ld [wOAM + 8], a
+	put b, [wMenuWidth]
+	ld a, SCREEN_WIDTH
+	sub b
+	ld d, a
+	ld e, TILE_WIDTH
+	call Multiply
+	ld a, l
+	ld [wOAM + 9], a
+	put [wOAM + 10], 3
+	put [wOAM + 11], 0
+	ret
+
+RemoveMenuCursors:
 	xor a
 	ld hl, wOAM + 4
+	ld [hli], a
+	ld [hli], a
+	ld [hli], a
+	ld [hli], a
 	ld [hli], a
 	ld [hli], a
 	ld [hli], a
@@ -337,7 +367,7 @@ ScrollWindowIn:
 	ld b, a
 .scrollLoop
 	ld a, [rWX]
-	sub 4
+	sub 6
 	jle b, .done
 	ld [rWX], a
 	call WaitVBlank
@@ -348,7 +378,7 @@ ScrollWindowIn:
 
 ScrollWindowOut:
 	ld a, [rWX]
-	add 4
+	add 6
 	jge WINDOW_MAX_X, .done
 	ld [rWX], a
 	call WaitVBlank

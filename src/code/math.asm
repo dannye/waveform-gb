@@ -16,3 +16,14 @@ Multiply::
 .done
 ;	pop af
 	ret
+
+; add bc to hl a times
+AddATimes::
+	and a
+.loop
+	jr z, .done
+	add hl, bc
+	dec a
+	jr .loop
+.done
+	ret
