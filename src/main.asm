@@ -7,12 +7,12 @@ KNOB_RIGHT_TILE EQU 3
 KNOB_BOTH_TILE  EQU 4
 KNOB_START_X    EQU 2
 KNOB_START_Y    EQU 1
-NUM_COLUMNS     EQU 16
-NUM_ROWS        EQU 16
+NUM_COLUMNS     EQU WAVE_SIZE
+NUM_ROWS        EQU 1 << BITS_PER_WAVE_SAMPLE
 KNOB_HEIGHT     EQU 1
 KNOB_WIDTH      EQU 5
 
-NUMBER_X EQU KNOB_START_X + -1
+NUMBER_X EQU (KNOB_START_X) - 1
 NUMBER_Y EQU KNOB_START_Y
 
 FONT_BASE_TILE EQU $20
@@ -25,28 +25,29 @@ HEX_Y         EQU KNOB_START_Y + NUM_ROWS
 HEX_HEIGHT    EQU 1
 HEX_WIDTH     EQU 16
 
-ARROW_TILE EQU 0
-ARROW_X    EQU 8 * KNOB_START_X + 6
-ARROW_Y    EQU 8 * (KNOB_START_Y + 1)
+ARROW_TILE   EQU 0
+ARROW_X      EQU 8 * KNOB_START_X + 6
+ARROW_Y      EQU 8 * (KNOB_START_Y + 1)
+ARROW_HEIGHT EQU 1
+ARROW_WIDTH  EQU 4
+
+MIN_ARROW_POS EQU 0
+MAX_ARROW_POS EQU (NUM_WAVE_SAMPLES) - 1
 
 
 SECTION "Main WRAM", WRAM0
 
-wWave:: ds NUM_COLUMNS
-wCursorPos: ds 1
+wWave::      ds WAVE_SIZE
+wCursorPos:  ds 1
 wKnobColumn: ds NUM_ROWS
-wHexTiles: ds BYTES_PER_TILE * HEX_WIDTH
+wHexTiles:   ds BYTES_PER_TILE * HEX_WIDTH
 wNewHexTile: ds BYTES_PER_TILE
 
 
 SECTION "Main", ROM0
 
 Main::
-	call InitSound
-	call Load
-	call UpdateWave
 	call Setup
-	call PlayNote
 .loop
 	call WaitVBlank
 	call Update
@@ -56,35 +57,35 @@ Update:
 	call Joypad
 	ld c, 0
 	ld a, [wCursorPos]
-	bit 0, a
-	jr z, .even
+	jbz 0, .even
 	ld c, 1
 .even
 	srl a
-	ld d, 0
-	ld e, a
+	ldr de, a
 	ld hl, wWave
 	add hl, de
 	ld a, [wJoyPressed]
-	cp D_UP
-	jr nz, .noUp
+	je D_UP,    .pressedUp
+	je D_DOWN,  .pressedDown
+	je D_LEFT,  .pressedLeft
+	je D_RIGHT, .pressedRight
+	je START,   .pressedStart
+	ret
+
+.pressedUp
 	ld a, [hl]
-	bit 0, c
-	jr nz, .skipOdd1
+	jb 0, c, .skipOdd1
 	swap a ; skip for odd knobs
 .skipOdd1
 	and $0F
-	cp $F
-	jr z, .isMax
+	je $F, .isMax
 	inc a
-	bit 0, c
-	jr nz, .skipOdd2
+	jb 0, c, .skipOdd2
 	swap a ; skip for odd knobs
 .skipOdd2
 	ld b, a
 	ld a, [hl]
-	bit 0, c
-	jr nz, .skipOdd3
+	jb 0, c, .skipOdd3
 	and $0F ; for even knobs
 	jr .skipEven1
 .skipOdd3
@@ -92,35 +93,24 @@ Update:
 .skipEven1
 	or b
 	ld [hl], a
-	call UpdateKnobTilemap
-	callback CopyKnobTilemap
-	call UpdateHexTile
-	callback CopyHexTile
-	call UpdateWave
-	call PlayNote
-	call Save
+	jr .afterWaveChange
 .isMax
-.noUp
-	ld a, [wJoyPressed]
-	cp D_DOWN
-	jr nz, .noDown
+	ret
+
+.pressedDown
 	ld a, [hl]
-	bit 0, c
-	jr nz, .skipOdd4
+	jb 0, c, .skipOdd4
 	swap a ; skip for odd knobs
 .skipOdd4
 	and $0F
-	cp 0 ; redundant
-	jr z, .isMin
+	jz .isMin
 	dec a
-	bit 0, c
-	jr nz, .skipOdd5
+	jb 0, c, .skipOdd5
 	swap a ; skip for odd knobs
 .skipOdd5
 	ld b, a
 	ld a, [hl]
-	bit 0, c
-	jr nz, .skipOdd6
+	jb 0, c, .skipOdd6
 	and $0F ; for even knobs
 	jr .skipEven2
 .skipOdd6
@@ -128,23 +118,22 @@ Update:
 .skipEven2
 	or b
 	ld [hl], a
-	call UpdateKnobTilemap
-	callback CopyKnobTilemap
-	call UpdateHexTile
-	callback CopyHexTile
+	jr .afterWaveChange
+.isMin
+	ret
+
+.afterWaveChange
+	call UpdateKnobTilemap_Defer
+	call UpdateHexTile_Defer
 	call UpdateWave
 	call PlayNote
-	call Save
-.isMin
-.noDown
-	ld a, [wJoyPressed]
-	cp D_LEFT
-	jr nz, .noLeft
+	ret
+
+.pressedLeft
 	ld a, [wCursorPos]
 	dec a
-	cp -1
-	jr nz, .noUnderflow
-	ld a, NUM_COLUMNS * 2 - 1
+	jne (MIN_ARROW_POS) - 1, .noUnderflow
+	ld a, MAX_ARROW_POS
 .noUnderflow
 	ld [wCursorPos], a
 	ld d, a
@@ -153,15 +142,13 @@ Update:
 	ld bc, ARROW_X
 	add hl, bc
 	put [wOAM + 1], l
-.noLeft
-	ld a, [wJoyPressed]
-	cp D_RIGHT
-	jr nz, .noRight
+	ret
+
+.pressedRight
 	ld a, [wCursorPos]
 	inc a
-	cp NUM_COLUMNS * 2
-	jr nz, .noOverflow
-	xor a
+	jne MAX_ARROW_POS + 1, .noOverflow
+	ld a, MIN_ARROW_POS
 .noOverflow
 	ld [wCursorPos], a
 	ld d, a
@@ -170,23 +157,93 @@ Update:
 	ld bc, ARROW_X
 	add hl, bc
 	put [wOAM + 1], l
-.noRight
+	ret
+
+.pressedStart
+	ld a, [wCursorPos]
+	jle 17, .noHide
+	; push arrow oam data
+	ld a, [wOAM + 0]
+	push af
+	ld a, [wOAM + 1]
+	push af
+	put [wOAM + 0], 0
+	put [wOAM + 1], 0
+.noHide
+	put [wOAM + 2], 2
+	ld a, 7
+	ld hl, StartMenuOptions
+	call OpenMenu
+	ld a, [wCursorPos]
+	jle 17, .noShow
+	; pop arrow oam data
+	pop af
+	ld [wOAM + 1], a
+	pop af
+	ld [wOAM + 0], a
+.noShow
+	put [wOAM + 2], 0
+	ret
+
+StartMenuOptions:
+	dw SaveLabel,   SaveAction
+	dw ResetLabel,  ResetAction
+	dw CancelLabel, CancelAction
+	dw 0
+
+SaveLabel:
+	db "Save", 0
+
+SaveAction:
+	call SaveSAV
+	ret
+
+ResetLabel:
+	db "Reset", 0
+
+ResetAction:
+	call LoadDefaultWave
+	call RefreshWave
+	call PlayNote
+	ret
+
+RefreshWave:
+	call WaitForCallbacks
+	ld a, [wCursorPos]
+	push af
+	put [wCursorPos], 0
+	ld c, NUM_COLUMNS
+.refreshLoop
+	push bc
+	call UpdateKnobTilemap_Defer
+	call UpdateHexTile_Defer
+	call WaitForCallbacks
+	ld a, [wCursorPos]
+	add 2
+	ld [wCursorPos], a
+	pop bc
+	dec c
+	jr nz, .refreshLoop
+	pop af
+	ld [wCursorPos], a
+	ret
+
+CancelLabel:
+	db "Cancel", 0
+
+CancelAction:
 	ret
 
 UpdateWave:
-	put [rNR30], %00000000 ; ch3 off
-	ld c, NUM_COLUMNS
 	ld hl, wWave
-	ld de, $FF30
-.copyLoop
-	put [de], [hli]
-	inc de
-	dec c
-	jr nz, .copyLoop
-	put [rNR30], %10000000 ; ch3 on
+	call LoadWave
 	ret
 
 Setup:
+	call InitSound
+	call LoadSAV
+	call UpdateWave
+
 	call DisableLCD
 
 	ld bc, KnobGraphics
@@ -204,23 +261,20 @@ Setup:
 	ld a, FONT_WIDTH * FONT_HEIGHT
 	call LoadGfx
 
-	ld bc, ArrowGraphics
+	ld bc, ArrowsGraphics
 	ld de, vChars0 + ARROW_TILE * BYTES_PER_TILE
-	ld a, 1
+	ld a, ARROW_WIDTH * ARROW_HEIGHT
 	call LoadGfx
 
 	put [wCursorPos], 0
 	REPT NUM_COLUMNS
 	call UpdateKnobTilemap
-	call CopyKnobTilemap
 	call UpdateHexTile
-	call CopyHexTile
 	ld a, [wCursorPos]
-	inc a
-	inc a
+	add 2
 	ld [wCursorPos], a
 	ENDR
-	put [wCursorPos], 0
+	put [wCursorPos], MIN_ARROW_POS
 	call DrawNumberTilemap
 
 	ld hl, vBGMap0 + BG_WIDTH * HEX_Y + HEX_X
@@ -232,16 +286,33 @@ Setup:
 
 	ld hl, wOAM
 	put [hli], ARROW_Y
-	put [hli], ARROW_X
+	put [hli], ARROW_X + MIN_ARROW_POS * 4
 	put [hli], ARROW_TILE
 	put [hli], $00
 
 	call SetPalette
 
 	call EnableLCD
+
+	call PlayNote
 	ret
 
+; update knob tilemap and copy to vram immediately
 UpdateKnobTilemap:
+	call UpdateKnobTilemap_
+	call CopyKnobTilemap
+	ret
+
+; update knob tilemap and copy to vram on vblank
+UpdateKnobTilemap_Defer:
+	call UpdateKnobTilemap_
+	callback CopyKnobTilemap
+	ret
+
+; update knob tilemap by updating the current column
+; clear the column, then place the left and right knob
+; use KNOB_BOTH_TILE if both knobs have same value
+UpdateKnobTilemap_:
 	ld hl, wKnobColumn
 	ld a, KNOB_TRACK_TILE
 	REPT NUM_ROWS
@@ -249,8 +320,7 @@ UpdateKnobTilemap:
 	ENDR
 	ld a, [wCursorPos]
 	srl a
-	ld b, 0
-	ld c, a
+	ldr bc, a
 	ld hl, wWave
 	add hl, bc
 	ld a, [hl]
@@ -264,8 +334,7 @@ UpdateKnobTilemap:
 	ld a, $0F
 	sub b
 	ld d, a ; backup
-	ld b, 0
-	ld c, a
+	ldr bc, a
 	ld hl, wKnobColumn
 	add hl, bc
 	ld [hl], KNOB_LEFT_TILE
@@ -273,22 +342,20 @@ UpdateKnobTilemap:
 	ld b, a
 	ld a, $0F
 	sub b
-	ld b, 0
-	ld c, a
+	ldr bc, a
 	ld hl, wKnobColumn
 	add hl, bc
 	ld [hl], KNOB_RIGHT_TILE
-	cp d
-	jr nz, .different
+	jne d, .different
 	ld [hl], KNOB_BOTH_TILE
 .different
 	ret
 
+; copy the updated knob column to vram
 CopyKnobTilemap:
 	ld a, [wCursorPos]
 	srl a
-	ld b, 0
-	ld c, a
+	ldr bc, a
 	ld hl, vBGMap0 + BG_WIDTH * KNOB_START_Y + KNOB_START_X
 	add hl, bc
 	ld de, wKnobColumn
@@ -300,11 +367,24 @@ CopyKnobTilemap:
 	ENDR
 	ret
 
+; update hex digit tile and copy to vram immediately
 UpdateHexTile:
+	call UpdateHexTile_
+	call CopyHexTile
+	ret
+
+; update hex digit tile and copy to vram on vblank
+UpdateHexTile_Defer:
+	call UpdateHexTile_
+	callback CopyHexTile
+	ret
+
+; update hex digit tile by using the values of the left
+; and right knob of the current column
+UpdateHexTile_:
 	ld a, [wCursorPos]
 	srl a
-	ld b, 0
-	ld c, a
+	ldr bc, a
 	ld hl, wWave
 	add hl, bc
 	ld a, [hl]
@@ -315,18 +395,20 @@ UpdateHexTile:
 	and $0F
 	swap a
 	ld hl, wHexTiles
-	ld d, 0
-	ld e, a
+	ldr de, a
 	add hl, de
 	push hl
 	pop de
 	ld a, b
 	ld hl, wHexTiles
-	ld b, 0
-	ld c, a
+	ldr bc, a
 	add hl, bc
 	push hl
 	pop bc
+
+	; combine tiles at bc and de
+	; left half of tile at bc gets placed in left half of tile at hl
+	; left half of tile at de gets placed in right half of tile at hl
 	ld hl, wNewHexTile
 	ld a, BYTES_PER_TILE
 .hexLoop
@@ -334,9 +416,11 @@ UpdateHexTile:
 	ld a, [bc]
 	inc bc
 	push bc
+	and $F0
 	ld b, a
 	ld a, [de]
 	inc de
+	and $F0
 	swap a
 	or b
 	ld [hli], a
@@ -346,12 +430,12 @@ UpdateHexTile:
 	jr nz, .hexLoop
 	ret
 
+; copy the updated hex digit tile to vram
 CopyHexTile:
 	ld a, [wCursorPos]
 	srl a
 	swap a
-	ld b, 0
-	ld c, a
+	ldr bc, a
 	ld hl, vChars2 + HEX_BASE_TILE * BYTES_PER_TILE
 	add hl, bc
 	ld de, wNewHexTile
@@ -361,6 +445,7 @@ CopyHexTile:
 	ENDR
 	ret
 
+; draw the knob values to the left of the knob columns
 DrawNumberTilemap:
 	ld de, .numberTilemap
 	ld hl, vBGMap0 + BG_WIDTH * NUMBER_Y + NUMBER_X
@@ -368,8 +453,7 @@ DrawNumberTilemap:
 .numberLoop
 	ld a, [de]
 	inc de
-	and a
-	jr z, .numbersDone
+	jz .numbersDone
 	ld [hl], a
 	add hl, bc
 	jr .numberLoop
@@ -395,5 +479,5 @@ HexGraphics:
 FontGraphics:
 	INCBIN "gfx/font.2bpp"
 
-ArrowGraphics:
-	INCBIN "gfx/arrow.2bpp"
+ArrowsGraphics:
+	INCBIN "gfx/arrows.2bpp"

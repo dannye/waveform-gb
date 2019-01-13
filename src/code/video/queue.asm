@@ -161,3 +161,11 @@ ShiftGfxQueue:
 ;	ENDR
 
 	ret
+
+WaitForGfx::
+	ld a, [wGfxQueue]
+	jz .done
+	call WaitVBlank
+	jr WaitForGfx
+.done
+	ret
