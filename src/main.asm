@@ -38,6 +38,7 @@ MAX_ARROW_POS EQU (NUM_WAVE_SAMPLES) - 1
 SECTION "Main WRAM", WRAM0
 
 wWave::      ds WAVE_SIZE
+wWaveSlot::  ds 1
 wCursorPos:  ds 1
 wKnobColumn: ds NUM_ROWS
 wHexTiles:   ds BYTES_PER_TILE * HEX_WIDTH
@@ -161,7 +162,7 @@ Update:
 
 .pressedStart
 	ld a, [wCursorPos]
-	jle 17, .noHide
+	jle 8, .noHide
 	; push arrow oam data
 	ld a, [wOAM + 0]
 	push af
@@ -172,9 +173,10 @@ Update:
 .noHide
 	put [wOAM + 2], 2
 	ld hl, StartMenuOptions
+	xor a
 	call OpenMenu
 	ld a, [wCursorPos]
-	jle 17, .noShow
+	jle 8, .noShow
 	; pop arrow oam data
 	pop af
 	ld [wOAM + 1], a
@@ -185,25 +187,48 @@ Update:
 	ret
 
 StartMenuOptions:
-	dw SaveLabel,   SaveAction
-	dw ResetLabel,  ResetAction
-	dw CancelLabel, CancelAction
+	dw SaveLabel,     SaveAction
+	dw LoadLabel,     LoadAction
+	dw DefaultsLabel, DefaultsAction
+	dw CancelLabel,   CancelAction
 	dw 0
 
 SaveLabel:
-	db "Save", 0
+	db "Save...", 0
 
 SaveAction:
-	call SaveSAV
+	ld hl, SaveMenuOptions
+	ld a, [wWaveSlot]
+	scf
+	call OpenMenu
+	je -1, .cancelled
+	ld [wWaveSlot], a
+.cancelled
 	ret
 
-ResetLabel:
-	db "Reset", 0
+LoadLabel:
+	db "Load...", 0
 
-ResetAction:
-	call LoadDefaultWave
-	call RefreshWave
-	call PlayNote
+LoadAction:
+	ld hl, LoadMenuOptions
+	ld a, [wWaveSlot]
+	scf
+	call OpenMenu
+	je -1, .cancelled
+	ld [wWaveSlot], a
+.cancelled
+	ret
+
+DefaultsLabel:
+	db "Defaults...", 0
+
+DefaultsAction:
+	ld hl, DefaultsMenuOptions
+	xor a
+	call OpenMenu
+	je -1, .cancelled
+	call LoadDefaultAction
+.cancelled
 	ret
 
 RefreshWave:
@@ -233,6 +258,107 @@ CancelLabel:
 CancelAction:
 	ret
 
+SaveMenuOptions:
+	dw Wave1Label,  SaveWaveAction
+	dw Wave2Label,  SaveWaveAction
+	dw Wave3Label,  SaveWaveAction
+	dw Wave4Label,  SaveWaveAction
+	dw Wave5Label,  SaveWaveAction
+	dw Wave6Label,  SaveWaveAction
+	dw Wave7Label,  SaveWaveAction
+	dw Wave8Label,  SaveWaveAction
+;	dw CancelLabel, CancelAction
+	dw 0
+
+Wave1Label:
+	db "Wave 1", 0
+
+Wave2Label:
+	db "Wave 2", 0
+
+Wave3Label:
+	db "Wave 3", 0
+
+Wave4Label:
+	db "Wave 4", 0
+
+Wave5Label:
+	db "Wave 5", 0
+
+Wave6Label:
+	db "Wave 6", 0
+
+Wave7Label:
+	db "Wave 7", 0
+
+Wave8Label:
+	db "Wave 8", 0
+
+SaveWaveAction:
+	call SaveSAV
+	ret
+
+LoadMenuOptions:
+	dw Wave1Label,  LoadWaveAction
+	dw Wave2Label,  LoadWaveAction
+	dw Wave3Label,  LoadWaveAction
+	dw Wave4Label,  LoadWaveAction
+	dw Wave5Label,  LoadWaveAction
+	dw Wave6Label,  LoadWaveAction
+	dw Wave7Label,  LoadWaveAction
+	dw Wave8Label,  LoadWaveAction
+;	dw CancelLabel, CancelAction
+	dw 0
+
+LoadWaveAction:
+	call LoadSAV
+	call UpdateWave
+	call RefreshWave
+	call PlayNote
+	ret
+
+DefaultsMenuOptions:
+	dw Default1Label, LoadDefaultAction
+	dw Default2Label, LoadDefaultAction
+	dw Default3Label, LoadDefaultAction
+	dw Default4Label, LoadDefaultAction
+	dw Default5Label, LoadDefaultAction
+	dw Default6Label, LoadDefaultAction
+	dw Default7Label, LoadDefaultAction
+	dw Default8Label, LoadDefaultAction
+;	dw CancelLabel,  CancelAction
+	dw 0
+
+Default1Label:
+	db "Triangle", 0
+
+Default2Label:
+	db "Sawtooth", 0
+
+Default3Label:
+	db "50% Square", 0
+
+Default4Label:
+	db "Sine", 0
+
+Default5Label:
+	db "Sine Saw", 0
+
+Default6Label:
+	db "Double Saw", 0
+
+Default7Label:
+	db "Arrow 1", 0
+
+Default8Label:
+	db "Arrow 2", 0
+
+LoadDefaultAction:
+	call LoadDefaultWave
+	call RefreshWave
+	call PlayNote
+	ret
+
 UpdateWave:
 	ld hl, wWave
 	call LoadWave
@@ -240,6 +366,7 @@ UpdateWave:
 
 Setup:
 	call InitSound
+	put [wWaveSlot], 0
 	call LoadSAV
 	call UpdateWave
 

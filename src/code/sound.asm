@@ -13,6 +13,7 @@ InitSound::
 	put [rNR34], %00000000 ; counter mode off
 	put [rNR32], %00100000 ; 100% volume
 
+	xor a
 	call LoadDefaultWave
 
 	put [rNR30], %10000000 ; ch3 on
@@ -21,8 +22,11 @@ InitSound::
 	put [wOctave], 4
 	ret
 
+; load default wave with index a
 LoadDefaultWave::
-	ld hl, DefaultWave
+	ld hl, DefaultWaves
+	ld bc, WAVE_SIZE
+	call AddATimes
 	ld de, wWave
 	call CopyWave
 	ld hl, wWave
@@ -51,8 +55,15 @@ CopyWave::
 	jr nz, .copyLoop
 	ret
 
-DefaultWave:
-	db $01, $23, $45, $67, $89, $AB, $CD, $EF, $FE, $DC, $BA, $98, $76, $54, $32, $10
+DefaultWaves:
+	db $89, $AB, $CD, $EF, $FE, $DC, $BA, $98, $76, $54, $32, $10, $01, $23, $45, $67
+	db $88, $99, $AA, $BB, $CC, $DD, $EE, $FF, $00, $11, $22, $33, $44, $55, $66, $77
+	db $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $00, $00, $00, $00, $00, $00, $00, $00
+	db $8A, $CD, $EE, $FF, $FF, $EE, $DC, $A8, $75, $32, $11, $00, $00, $11, $23, $57
+	db $8A, $CD, $EE, $FF, $FF, $EE, $DC, $A8, $01, $23, $45, $67, $89, $AB, $CD, $EF
+	db $01, $23, $45, $67, $89, $AB, $CD, $EF, $02, $46, $8A, $CE, $02, $46, $8A, $CE
+	db $00, $FF, $11, $EE, $22, $DD, $33, $CC, $44, $BB, $55, $AA, $66, $99, $77, $88
+	db $00, $00, $EE, $EE, $22, $22, $CC, $CC, $44, $44, $AA, $AA, $66, $66, $88, $88
 
 PlayNote::
 	put b, [wOctave]
