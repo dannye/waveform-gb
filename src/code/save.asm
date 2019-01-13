@@ -1,47 +1,39 @@
 SECTION "Save SRAM", SRAM
 
-sMarker:: ds 2
-sWave:: ds 16
+sMarker: ds 2
+sWave:   ds WAVE_SIZE
 
 
 SECTION "Save", ROM0
 
-Save::
+SaveSAV::
 	put [MBC3_SRAM], SRAM_ENABLE
 	put [MBC3_SRAMBank], 0
 	put [sMarker], "W"
 	put [sMarker + 1], "F"
 	ld hl, wWave
 	ld de, sWave
-	REPT 16
-	put [de], [hli]
-	inc de
-	ENDR
+	call CopyWave
 	put [MBC3_SRAM], SRAM_DISABLE
 	ret
 
-Load::
+LoadSAV::
 	put [MBC3_SRAM], SRAM_ENABLE
 	put [MBC3_SRAMBank], 0
 	call VerifySave
 	jr c, .noSave
 	ld hl, sWave
 	ld de, wWave
-	REPT 16
-	put [de], [hli]
-	inc de
-	ENDR
+	call CopyWave
 .noSave
 	put [MBC3_SRAM], SRAM_DISABLE
 	ret
 
-VerifySave::
+VerifySave:
 	ld a, [sMarker]
-	cp "W"
-	jr nz, .noSave
+	jne "W", .noSave
 	ld a, [sMarker + 1]
-	cp "F"
-	jr nz, .noSave
+	jne "F", .noSave
 	and a
 	ret
 .noSave

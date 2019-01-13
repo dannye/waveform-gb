@@ -23,3 +23,16 @@ EnableLCD::
 	set 7, a
 	ld [rLCDC], a
 	ret
+
+DisableWindow::
+	ld a, [rLCDC]
+	res 5, a ; disable window
+	ld [rLCDC], a
+	ret
+
+EnableWindow::
+	ld a, [rLCDC]
+	set 5, a ; enable window
+	set 6, a ; use bg map 1
+	ld [rLCDC], a
+	ret

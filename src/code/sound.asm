@@ -1,6 +1,6 @@
 SECTION "Sound WRAM", WRAM0
 
-wPitch: ds 1
+wPitch:  ds 1
 wOctave: ds 1
 
 
@@ -13,27 +13,42 @@ InitSound::
 	put [rNR34], %00000000 ; counter mode off
 	put [rNR32], %00100000 ; 100% volume
 
-	put [rNR30], %00000000 ; ch3 off
-
-	ld a, 16
-	ld hl, DefaultWave
-	ld bc, wWave
-	ld de, $FF30
-.copyLoop
-	push af
-	put [bc], [hl]
-	put [de], [hl]
-	inc hl
-	inc bc
-	inc de
-	pop af
-	dec a
-	jr nz, .copyLoop
+	call LoadDefaultWave
 
 	put [rNR30], %10000000 ; ch3 on
 
 	put [wPitch], 0
 	put [wOctave], 4
+	ret
+
+LoadDefaultWave::
+	ld hl, DefaultWave
+	ld de, wWave
+	call CopyWave
+	ld hl, wWave
+	call LoadWave
+	ret
+
+; load wave at hl to rWave
+LoadWave::
+	ld a, [rNR30]
+	push af
+	xor a
+	ld [rNR30], a
+	ld de, rWave
+	call CopyWave
+	pop af
+	ld [rNR30], a
+	ret
+
+; copy wave at hl to de
+CopyWave::
+	ld c, WAVE_SIZE
+.copyLoop
+	put [de], [hli]
+	inc de
+	dec c
+	jr nz, .copyLoop
 	ret
 
 DefaultWave:

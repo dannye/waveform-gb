@@ -8,10 +8,25 @@ vChars2 EQU $9000
 vBGMap0 EQU $9800
 vBGMap1 EQU $9c00
 
+TILE_WIDTH      EQU 8
+BITS_PER_BYTE   EQU 8
+BITS_PER_PIXEL  EQU 2
+PIXELS_PER_TILE EQU TILE_WIDTH * TILE_WIDTH
+PIXELS_PER_BYTE EQU BITS_PER_BYTE / BITS_PER_PIXEL
+BYTES_PER_TILE  EQU PIXELS_PER_TILE / PIXELS_PER_BYTE
+
 BG_WIDTH  EQU 32
 BG_HEIGHT EQU 32
 
-BYTES_PER_TILE EQU $10
+SCREEN_WIDTH  EQU 20
+SCREEN_HEIGHT EQU 18
+
+SCREEN_WIDTH_PIXELS  EQU SCREEN_WIDTH * TILE_WIDTH
+SCREEN_HEIGHT_PIXELS EQU SCREEN_HEIGHT * TILE_WIDTH
+
+WINDOW_MIN_X EQU 7
+WINDOW_RIGHT EQU WINDOW_MIN_X + SCREEN_WIDTH_PIXELS
+WINDOW_MAX_X EQU (WINDOW_RIGHT) - 2
 
 
 ; interrupt flags
@@ -68,6 +83,7 @@ rNR44       EQU $ff23 ; Channel 4 Counter/consecutive; Inital (R/W)
 rNR50       EQU $ff24 ; Channel control / ON-OFF / Volume (R/W)
 rNR51       EQU $ff25 ; Selection of Sound output terminal (R/W)
 rNR52       EQU $ff26 ; Sound on/off
+rWave       EQU $ff30 ; Channel 3 Wave Pattern
 rLCDC       EQU $ff40 ; LCD Control (R/W)
 rSTAT       EQU $ff41 ; LCDC Status (R/W)
 rSCY        EQU $ff42 ; Scroll Y (R/W)
@@ -101,6 +117,12 @@ rUNKN5      EQU $ff75 ; (8Fh) - Bit 4-6 (Read/Write)
 rUNKN6      EQU $ff76 ; (00h) - Always 00h (Read Only)
 rUNKN7      EQU $ff77 ; (00h) - Always 00h (Read Only)
 rIE         EQU $ffff ; Interrupt Enable (R/W)
+
+
+NUM_WAVE_SAMPLES      EQU 32
+BITS_PER_WAVE_SAMPLE  EQU 4
+WAVE_SAMPLES_PER_BYTE EQU BITS_PER_BYTE / BITS_PER_WAVE_SAMPLE
+WAVE_SIZE             EQU NUM_WAVE_SAMPLES / WAVE_SAMPLES_PER_BYTE
 
 
 ; MBC3

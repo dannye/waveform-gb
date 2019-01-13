@@ -113,3 +113,11 @@ RunCallbacks:
 	xor a
 	ld [wCallbacks], a
 	ret
+
+WaitForCallbacks::
+	ld a, [wCallbacks]
+	jz .done
+	call WaitVBlank
+	jr WaitForCallbacks
+.done
+	ret
