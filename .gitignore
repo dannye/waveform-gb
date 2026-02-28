@@ -9,11 +9,5 @@
 *.sym
 *.map
 
-# precompiled python
-*.pyc
-
-# swap files
-*.swp
-
 # save files
 *.sav

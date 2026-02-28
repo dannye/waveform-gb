@@ -1,9 +1,9 @@
-NUM_WAVES EQU 8
+DEF NUM_WAVES EQU 8
 
 SECTION "Save SRAM", SRAM
 
 sMarker: ds 2
-sWaves:  ds WAVE_SIZE * NUM_WAVES
+sWaves:  ds AUD3WAVE_SIZE * NUM_WAVES
 
 
 SECTION "Save", ROM0
@@ -11,26 +11,26 @@ SECTION "Save", ROM0
 ; save current wave into slot a
 SaveSAV::
 	ld hl, sWaves
-	ld bc, WAVE_SIZE
+	ld bc, AUD3WAVE_SIZE
 	call AddATimes
 	push hl
-	put [MBC3_SRAM], SRAM_ENABLE
-	put [MBC3_SRAMBank], 0
-	put [sMarker], "W"
-	put [sMarker + 1], "F"
+	put [rRAMG], RAMG_SRAM_ENABLE
+	put [rRAMB], 0
+	put [sMarker], 'W'
+	put [sMarker + 1], 'F'
 	ld hl, wWave
 	pop de
 	call CopyWave
-	put [MBC3_SRAM], SRAM_DISABLE
+	put [rRAMG], RAMG_SRAM_DISABLE
 	ret
 
 ; load current wave with slot a
 LoadSAV::
 	ld hl, sWaves
-	ld bc, WAVE_SIZE
+	ld bc, AUD3WAVE_SIZE
 	call AddATimes
-	put [MBC3_SRAM], SRAM_ENABLE
-	put [MBC3_SRAMBank], 0
+	put [rRAMG], RAMG_SRAM_ENABLE
+	put [rRAMB], 0
 	call VerifySave
 	jr c, .noSave
 	ld de, wWave
@@ -39,14 +39,14 @@ LoadSAV::
 .noSave
 	call InitSAV
 .done
-	put [MBC3_SRAM], SRAM_DISABLE
+	put [rRAMG], RAMG_SRAM_DISABLE
 	ret
 
 VerifySave:
 	ld a, [sMarker]
-	jne "W", .noSave
+	jne 'W', .noSave
 	ld a, [sMarker + 1]
-	jne "F", .noSave
+	jne 'F', .noSave
 	and a
 	ret
 .noSave
@@ -54,5 +54,5 @@ VerifySave:
 	ret
 
 InitSAV:
-	fill sWaves, WAVE_SIZE * NUM_WAVES, 0
+	fill sWaves, AUD3WAVE_SIZE * NUM_WAVES, 0
 	ret

@@ -6,7 +6,7 @@
 
 SECTION "rst Bankswitch", ROM0[Bankswitch]
 	ld [hROMBank], a
-	ld [MBC5_ROMBank], a
+	ld [rROMB], a
 	ret
 
 SECTION "rst FarCall", ROM0[FarCall]

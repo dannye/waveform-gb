@@ -1,10 +1,7 @@
-OAM_SPRITES EQU 40
-
-
 SECTION "OAM WRAM", WRAM0, ALIGN[8]
 
 wOAM::
-	ds 4 * OAM_SPRITES
+	ds 4 * OAM_COUNT
 
 
 SECTION "OAM", ROM0
@@ -26,7 +23,7 @@ WriteDMATransferToHRAM:
 DMATransfer:
 	ld a, wOAM >> 8
 	ld [rDMA], a
-	ld a, OAM_SPRITES
+	ld a, OAM_COUNT
 .waitLoop
 	dec a
 	jr nz, .waitLoop

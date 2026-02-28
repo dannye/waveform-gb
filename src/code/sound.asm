@@ -7,16 +7,16 @@ wOctave: ds 1
 SECTION "Sound", ROM0
 
 InitSound::
-	put [rNR52], %10000000 ; sound enabled
-	put [rNR51], %01000100 ; all output for ch3
-	put [rNR50], $77       ; stereo panning
-	put [rNR34], %00000000 ; counter mode off
-	put [rNR32], %00100000 ; 100% volume
+	put [rAUDENA], AUDENA_ON
+	put [rAUDTERM], AUDTERM_3_LEFT | AUDTERM_3_RIGHT
+	put [rAUDVOL], AUDVOL_LEFT | AUDVOL_RIGHT
+	put [rAUD3HIGH], AUD3HIGH_LENGTH_OFF
+	put [rAUD3LEVEL], AUD3LEVEL_100
 
 	xor a
 	call LoadDefaultWave
 
-	put [rNR30], %10000000 ; ch3 on
+	put [rAUD3ENA], AUD3ENA_ON
 
 	put [wPitch], 0
 	put [wOctave], 4
@@ -25,7 +25,7 @@ InitSound::
 ; load default wave with index a
 LoadDefaultWave::
 	ld hl, DefaultWaves
-	ld bc, WAVE_SIZE
+	ld bc, AUD3WAVE_SIZE
 	call AddATimes
 	ld de, wWave
 	call CopyWave
@@ -33,21 +33,21 @@ LoadDefaultWave::
 	call LoadWave
 	ret
 
-; load wave at hl to rWave
+; load wave at hl to _AUD3WAVERAM
 LoadWave::
-	ld a, [rNR30]
+	ld a, [rAUD3ENA]
 	push af
 	xor a
-	ld [rNR30], a
-	ld de, rWave
+	ld [rAUD3ENA], a
+	ld de, _AUD3WAVERAM
 	call CopyWave
 	pop af
-	ld [rNR30], a
+	ld [rAUD3ENA], a
 	ret
 
 ; copy wave at hl to de
 CopyWave::
-	ld c, WAVE_SIZE
+	ld c, AUD3WAVE_SIZE
 .copyLoop
 	put [de], [hli]
 	inc de
@@ -70,10 +70,10 @@ PlayNote::
 	ld a, [wPitch]
 	call CalculateFrequency
 	ld a, e
-	ld [rNR33], a
+	ld [rAUD3LOW], a
 	ld a, d
 	res 6, a
-	ld [rNR34], a
+	ld [rAUD3HIGH], a
 	ret
 
 ; return the frequency for note a, octave b in de

@@ -1,48 +1,51 @@
 INCLUDE "constants.asm"
 
-KNOB_BASE_TILE  EQU 0
-KNOB_TRACK_TILE EQU 1
-KNOB_LEFT_TILE  EQU 2
-KNOB_RIGHT_TILE EQU 3
-KNOB_BOTH_TILE  EQU 4
-KNOB_START_X    EQU 2
-KNOB_START_Y    EQU 1
-NUM_COLUMNS     EQU WAVE_SIZE
-NUM_ROWS        EQU 1 << BITS_PER_WAVE_SAMPLE
-KNOB_HEIGHT     EQU 1
-KNOB_WIDTH      EQU 5
+DEF NUM_WAVE_SAMPLES      EQU 32
+DEF BITS_PER_WAVE_SAMPLE  EQU 4
 
-NUMBER_X EQU (KNOB_START_X) - 1
-NUMBER_Y EQU KNOB_START_Y
+DEF KNOB_BASE_TILE  EQU 0
+DEF KNOB_TRACK_TILE EQU 1
+DEF KNOB_LEFT_TILE  EQU 2
+DEF KNOB_RIGHT_TILE EQU 3
+DEF KNOB_BOTH_TILE  EQU 4
+DEF KNOB_START_X    EQU 2
+DEF KNOB_START_Y    EQU 1
+DEF NUM_COLUMNS     EQU AUD3WAVE_SIZE
+DEF NUM_ROWS        EQU 1 << BITS_PER_WAVE_SAMPLE
+DEF KNOB_HEIGHT     EQU 1
+DEF KNOB_WIDTH      EQU 5
 
-FONT_BASE_TILE EQU $20
-FONT_HEIGHT    EQU 6
-FONT_WIDTH     EQU 16
+DEF NUMBER_X EQU (KNOB_START_X) - 1
+DEF NUMBER_Y EQU KNOB_START_Y
 
-HEX_BASE_TILE EQU $10
-HEX_X         EQU KNOB_START_X
-HEX_Y         EQU KNOB_START_Y + NUM_ROWS
-HEX_HEIGHT    EQU 1
-HEX_WIDTH     EQU 16
+DEF FONT_BASE_TILE EQU $20
+DEF FONT_HEIGHT    EQU 6
+DEF FONT_WIDTH     EQU 16
 
-ARROW_TILE   EQU 0
-ARROW_X      EQU 8 * KNOB_START_X + 6
-ARROW_Y      EQU 8 * (KNOB_START_Y + 1)
-ARROW_HEIGHT EQU 1
-ARROW_WIDTH  EQU 4
+DEF HEX_BASE_TILE EQU $10
+DEF HEX_X         EQU KNOB_START_X
+DEF HEX_Y         EQU KNOB_START_Y + NUM_ROWS
+DEF HEX_HEIGHT    EQU 1
+DEF HEX_WIDTH     EQU 16
 
-MIN_ARROW_POS EQU 0
-MAX_ARROW_POS EQU (NUM_WAVE_SAMPLES) - 1
+DEF ARROW_TILE   EQU 0
+DEF ARROW_X      EQU 8 * KNOB_START_X + 6
+DEF ARROW_Y      EQU 8 * (KNOB_START_Y + 1)
+DEF ARROW_HEIGHT EQU 1
+DEF ARROW_WIDTH  EQU 4
+
+DEF MIN_ARROW_POS EQU 0
+DEF MAX_ARROW_POS EQU (NUM_WAVE_SAMPLES) - 1
 
 
 SECTION "Main WRAM", WRAM0
 
-wWave::      ds WAVE_SIZE
+wWave::      ds AUD3WAVE_SIZE
 wWaveSlot::  ds 1
 wCursorPos:  ds 1
 wKnobColumn: ds NUM_ROWS
-wHexTiles:   ds BYTES_PER_TILE * HEX_WIDTH
-wNewHexTile: ds BYTES_PER_TILE
+wHexTiles:   ds TILE_SIZE * HEX_WIDTH
+wNewHexTile: ds TILE_SIZE
 
 
 SECTION "Main", ROM0
@@ -66,11 +69,11 @@ Update:
 	ld hl, wWave
 	add hl, de
 	ld a, [wJoyPressed]
-	je D_UP,    .pressedUp
-	je D_DOWN,  .pressedDown
-	je D_LEFT,  .pressedLeft
-	je D_RIGHT, .pressedRight
-	je START,   .pressedStart
+	je PAD_UP,    .pressedUp
+	je PAD_DOWN,  .pressedDown
+	je PAD_LEFT,  .pressedLeft
+	je PAD_RIGHT, .pressedRight
+	je PAD_START, .pressedStart
 	ret
 
 .pressedUp
@@ -162,7 +165,7 @@ Update:
 
 .pressedStart
 	ld a, [wCursorPos]
-	jle 8, .noHide
+	jl 8, .noHide
 	; push arrow oam data
 	ld a, [wOAM + 0]
 	push af
@@ -176,7 +179,7 @@ Update:
 	xor a
 	call OpenMenu
 	ld a, [wCursorPos]
-	jle 8, .noShow
+	jl 8, .noShow
 	; pop arrow oam data
 	pop af
 	ld [wOAM + 1], a
@@ -373,7 +376,7 @@ Setup:
 	call DisableLCD
 
 	ld bc, KnobGraphics
-	ld de, vChars2 + KNOB_BASE_TILE * BYTES_PER_TILE
+	ld de, vChars2 + KNOB_BASE_TILE * TILE_SIZE
 	ld a, KNOB_WIDTH * KNOB_HEIGHT
 	call LoadGfx
 
@@ -383,12 +386,12 @@ Setup:
 	call LoadGfx
 
 	ld bc, FontGraphics
-	ld de, vChars2 + FONT_BASE_TILE * BYTES_PER_TILE
+	ld de, vChars2 + FONT_BASE_TILE * TILE_SIZE
 	ld a, FONT_WIDTH * FONT_HEIGHT
 	call LoadGfx
 
 	ld bc, ArrowsGraphics
-	ld de, vChars0 + ARROW_TILE * BYTES_PER_TILE
+	ld de, vChars0 + ARROW_TILE * TILE_SIZE
 	ld a, ARROW_WIDTH * ARROW_HEIGHT
 	call LoadGfx
 
@@ -403,7 +406,7 @@ Setup:
 	put [wCursorPos], MIN_ARROW_POS
 	call DrawNumberTilemap
 
-	ld hl, vBGMap0 + BG_WIDTH * HEX_Y + HEX_X
+	ld hl, TILEMAP0 + TILEMAP_WIDTH * HEX_Y + HEX_X
 	ld a, HEX_BASE_TILE
 	REPT NUM_COLUMNS
 	ld [hli], a
@@ -482,10 +485,10 @@ CopyKnobTilemap:
 	ld a, [wCursorPos]
 	srl a
 	ldr bc, a
-	ld hl, vBGMap0 + BG_WIDTH * KNOB_START_Y + KNOB_START_X
+	ld hl, TILEMAP0 + TILEMAP_WIDTH * KNOB_START_Y + KNOB_START_X
 	add hl, bc
 	ld de, wKnobColumn
-	ld bc, BG_WIDTH
+	ld bc, TILEMAP_WIDTH
 	REPT NUM_ROWS
 	put [hl], [de]
 	add hl, bc
@@ -536,7 +539,7 @@ UpdateHexTile_:
 	; left half of tile at bc gets placed in left half of tile at hl
 	; left half of tile at de gets placed in right half of tile at hl
 	ld hl, wNewHexTile
-	ld a, BYTES_PER_TILE
+	ld a, TILE_SIZE
 .hexLoop
 	push af
 	ld a, [bc]
@@ -562,10 +565,10 @@ CopyHexTile:
 	srl a
 	swap a
 	ldr bc, a
-	ld hl, vChars2 + HEX_BASE_TILE * BYTES_PER_TILE
+	ld hl, vChars2 + HEX_BASE_TILE * TILE_SIZE
 	add hl, bc
 	ld de, wNewHexTile
-	REPT BYTES_PER_TILE
+	REPT TILE_SIZE
 	put [hli], [de]
 	inc de
 	ENDR
@@ -574,8 +577,8 @@ CopyHexTile:
 ; draw the knob values to the left of the knob columns
 DrawNumberTilemap:
 	ld de, .numberTilemap
-	ld hl, vBGMap0 + BG_WIDTH * NUMBER_Y + NUMBER_X
-	ld bc, BG_WIDTH
+	ld hl, TILEMAP0 + TILEMAP_WIDTH * NUMBER_Y + NUMBER_X
+	ld bc, TILEMAP_WIDTH
 .numberLoop
 	ld a, [de]
 	inc de

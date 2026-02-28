@@ -1,0 +1,3 @@
+DEF vChars0 EQU $8000
+DEF vChars1 EQU $8800
+DEF vChars2 EQU $9000

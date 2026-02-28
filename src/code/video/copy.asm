@@ -4,7 +4,7 @@ DrawTilemapRect::
 ; Fill a cxb rectangle at bg map address hl with a++.
 
 	push af
-	ld a, BG_WIDTH
+	ld a, TILEMAP_WIDTH
 	sub c
 	ld e, a
 	ld d, 0

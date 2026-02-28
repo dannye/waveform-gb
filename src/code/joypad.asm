@@ -1,34 +1,29 @@
-BUTTONS EQU $10
-D_PAD   EQU $20
-DONE    EQU $30
-
-
 SECTION "Joypad", ROM0
 
 Joypad::
-	put [rJOYP], D_PAD
+	put [rJOYP], JOYP_GET_CTRL_PAD
 	REPT 2
 	ld a, [rJOYP]
 	ENDR
 
 	cpl
-	and %1111
+	and JOYP_INPUTS
 	swap a
 
 	ld b, a
 
-	put [rJOYP], BUTTONS
+	put [rJOYP], JOYP_GET_BUTTONS
 	REPT 6
 	ld a, [rJOYP]
 	ENDR
 
 	cpl
-	and %1111
+	and JOYP_INPUTS
 	or b
 
 	ld b, a
 
-	put [rJOYP], DONE
+	put [rJOYP], JOYP_GET_NONE
 
 	ld a, [wJoy]
 	ld [wJoyLast], a

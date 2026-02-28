@@ -1,10 +1,10 @@
-TEXTBOX_BASE_TILE EQU 1
-TEXTBOX_TL EQU $81 ; top left
-TEXTBOX_H  EQU $82 ; horizontal
-TEXTBOX_TR EQU $83 ; top right
-TEXTBOX_BL EQU $84 ; bottom left
-TEXTBOX_V  EQU $85 ; vertical
-TEXTBOX_BR EQU $86 ; bottom right
+DEF TEXTBOX_BASE_TILE EQU 1
+DEF TEXTBOX_TL EQU $81 ; top left
+DEF TEXTBOX_H  EQU $82 ; horizontal
+DEF TEXTBOX_TR EQU $83 ; top right
+DEF TEXTBOX_BL EQU $84 ; bottom left
+DEF TEXTBOX_V  EQU $85 ; vertical
+DEF TEXTBOX_BR EQU $86 ; bottom right
 
 SECTION "Menu WRAM", WRAM0
 
@@ -32,7 +32,7 @@ OpenMenu::
 	call LoadOptions
 	call RefreshMenu
 	put [rWY], 0
-	put [rWX], WINDOW_MAX_X
+	put [rWX], SCREEN_WIDTH_PX + WX_OFS - 2
 	call EnableWindow
 	call ScrollWindowIn
 	call PlaceMenuCursor
@@ -41,10 +41,10 @@ OpenMenu::
 .menuLoop
 	call Joypad
 	ld a, [wJoyPressed]
-	je D_UP,     .pressedUp
-	je D_DOWN,   .pressedDown
-	je A_BUTTON, .pressedA
-	je B_BUTTON, .pressedB
+	je PAD_UP,   .pressedUp
+	je PAD_DOWN, .pressedDown
+	je PAD_A,    .pressedA
+	je PAD_B,    .pressedB
 	jr .menuLoop
 
 .pressedUp
@@ -141,7 +141,7 @@ CalcStringLength:
 
 LoadTextBoxTiles:
 	ld bc, TextBoxTiles
-	ld de, vChars1 + TEXTBOX_BASE_TILE * BYTES_PER_TILE
+	ld de, vChars1 + TEXTBOX_BASE_TILE * TILE_SIZE
 	ld a, 6
 	call QueueGfx
 	ret
@@ -168,32 +168,32 @@ RefreshMenu:
 
 RefreshMenu_1:
 	ld de, wMenuMap + SCREEN_WIDTH * 0
-	ld hl, vBGMap1 + BG_WIDTH * 0
+	ld hl, TILEMAP1 + TILEMAP_WIDTH * 0
 	jr RefreshMenu_
 
 RefreshMenu_2:
 	ld de, wMenuMap + SCREEN_WIDTH * 3
-	ld hl, vBGMap1 + BG_WIDTH * 3
+	ld hl, TILEMAP1 + TILEMAP_WIDTH * 3
 	jr RefreshMenu_
 
 RefreshMenu_3:
 	ld de, wMenuMap + SCREEN_WIDTH * 6
-	ld hl, vBGMap1 + BG_WIDTH * 6
+	ld hl, TILEMAP1 + TILEMAP_WIDTH * 6
 	jr RefreshMenu_
 
 RefreshMenu_4:
 	ld de, wMenuMap + SCREEN_WIDTH * 9
-	ld hl, vBGMap1 + BG_WIDTH * 9
+	ld hl, TILEMAP1 + TILEMAP_WIDTH * 9
 	jr RefreshMenu_
 
 RefreshMenu_5:
 	ld de, wMenuMap + SCREEN_WIDTH * 12
-	ld hl, vBGMap1 + BG_WIDTH * 12
+	ld hl, TILEMAP1 + TILEMAP_WIDTH * 12
 	jr RefreshMenu_
 
 RefreshMenu_6:
 	ld de, wMenuMap + SCREEN_WIDTH * 15
-	ld hl, vBGMap1 + BG_WIDTH * 15
+	ld hl, TILEMAP1 + TILEMAP_WIDTH * 15
 ;	jr RefreshMenu_
 
 RefreshMenu_:
@@ -208,7 +208,7 @@ RefreshMenu_:
 	dec b
 	jr z, .done
 	push bc
-	ld bc, BG_WIDTH - SCREEN_WIDTH
+	ld bc, TILEMAP_WIDTH - SCREEN_WIDTH
 	add hl, bc
 	pop bc
 	jr .outerLoop
@@ -362,7 +362,7 @@ ScrollWindowIn:
 	ld d, a
 	ld e, TILE_WIDTH
 	call Multiply
-	ld a, WINDOW_RIGHT
+	ld a, SCREEN_WIDTH_PX + WX_OFS
 	sub l
 	ld b, a
 .scrollLoop
@@ -379,12 +379,12 @@ ScrollWindowIn:
 ScrollWindowOut:
 	ld a, [rWX]
 	add 6
-	jge WINDOW_MAX_X, .done
+	jge SCREEN_WIDTH_PX + WX_OFS - 2, .done
 	ld [rWX], a
 	call WaitVBlank
 	jr ScrollWindowOut
 .done
-	put [rWX], WINDOW_MAX_X
+	put [rWX], SCREEN_WIDTH_PX + WX_OFS - 2
 	ret
 
 TextBoxTiles:

@@ -18,6 +18,6 @@ Then run `make`. This will create `waveform.gb`.
 
 This project is based off of [bootstrap.gb][bootstrap.gb] by [yenatch][yenatch].
 
-[rgbds]: https://github.com/rednex/rgbds
+[rgbds]: https://github.com/gbdev/rgbds
 [bootstrap.gb]: https://github.com/yenatch/bootstrap.gb
 [yenatch]: https://github.com/yenatch
